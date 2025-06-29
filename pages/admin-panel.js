@@ -64,6 +64,22 @@ export default function AdminPanel() {
         if (data.isAdmin || data.role === 'admin') {
           continue;
         }
+
+        // Fetch tasks subcollection
+        const tasksCol = collection(db, "users", doc.id, "tasks");
+        const tasksSnapshot = await getDocs(tasksCol);
+        const tasks = tasksSnapshot.docs.map(taskDoc => ({
+          id: taskDoc.id,
+          ...taskDoc.data()
+        }));
+
+        // Fetch wallets subcollection
+        const walletsCol = collection(db, "users", doc.id, "wallets");
+        const walletsSnapshot = await getDocs(walletsCol);
+        const wallets = walletsSnapshot.docs.map(walletDoc => ({
+          id: walletDoc.id,
+          ...walletDoc.data()
+        }));
         
         allUsers.push({ 
           id: doc.id, 
@@ -73,10 +89,10 @@ export default function AdminPanel() {
           createdAt: data.createdAt || new Date(),
           lastWalletUpdate: data.lastWalletUpdate || null,
           isDisabled: data.isDisabled || false,
-          tasks: data.tasks || [],
-          wallets: data.wallets || [],
-          walletHistory: data.walletHistory || [],
-          taskHistory: data.taskHistory || [],
+          tasks: tasks,
+          wallets: wallets,
+          walletHistory: wallets, // Use wallets subcollection for wallet history
+          taskHistory: tasks, // Use tasks subcollection for task history
           liveHistory: data.liveHistory || [],
           ...data 
         });
