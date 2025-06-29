@@ -59,6 +59,12 @@ export default function AdminPanel() {
       const allUsers = [];
       for (const doc of snapshot.docs) {
         const data = doc.data();
+        
+        // Skip admin users
+        if (data.isAdmin || data.role === 'admin') {
+          continue;
+        }
+        
         allUsers.push({ 
           id: doc.id, 
           name: data.name || "N/A",
@@ -69,6 +75,9 @@ export default function AdminPanel() {
           isDisabled: data.isDisabled || false,
           tasks: data.tasks || [],
           wallets: data.wallets || [],
+          walletHistory: data.walletHistory || [],
+          taskHistory: data.taskHistory || [],
+          liveHistory: data.liveHistory || [],
           ...data 
         });
       }
@@ -508,43 +517,52 @@ export default function AdminPanel() {
               </div>
 
               <div className={styles.userDetailsSection}>
-                <h3>Wallets ({viewingUser.wallets?.length || 0})</h3>
+                <h3>Wallet History ({viewingUser.walletHistory?.length || 0})</h3>
                 <div className={styles.detailsList}>
-                  {viewingUser.wallets && viewingUser.wallets.length > 0 ? (
-                    viewingUser.wallets.map((wallet, index) => (
+                  {viewingUser.walletHistory && viewingUser.walletHistory.length > 0 ? (
+                    viewingUser.walletHistory.map((transaction, index) => (
                       <div key={index} className={styles.walletItem}>
-                        <div><strong>Address:</strong> {wallet.address || 'N/A'}</div>
-                        <div><strong>Type:</strong> {wallet.type || 'Unknown'}</div>
-                        <div><strong>Balance:</strong> {wallet.balance || '0'}</div>
-                        <div><strong>Added:</strong> {formatDate(wallet.createdAt)}</div>
+                        <div><strong>Balance:</strong> {transaction.balance || '0'}</div>
+                        <div><strong>Description:</strong> {transaction.description || 'N/A'}</div>
+                        <div><strong>Quantity:</strong> {transaction.quantity || '0'}</div>
+                        <div><strong>Task ID:</strong> {transaction.taskId || 'N/A'}</div>
+                        <div><strong>Type:</strong> 
+                          <span className={`${styles.transactionType} ${styles[transaction.type?.toLowerCase()] || ''}`}>
+                            {transaction.type || 'Unknown'}
+                          </span>
+                        </div>
+                        <div><strong>Timestamp:</strong> {formatDate(transaction.timestamp)}</div>
                       </div>
                     ))
                   ) : (
-                    <p className={styles.emptyMessage}>No wallets found</p>
+                    <p className={styles.emptyMessage}>No wallet history found</p>
                   )}
                 </div>
               </div>
 
               <div className={styles.userDetailsSection}>
-                <h3>Task History ({viewingUser.tasks?.length || 0})</h3>
+                <h3>Task History ({viewingUser.taskHistory?.length || 0})</h3>
                 <div className={styles.detailsList}>
-                  {viewingUser.tasks && viewingUser.tasks.length > 0 ? (
-                    viewingUser.tasks.map((task, index) => (
+                  {viewingUser.taskHistory && viewingUser.taskHistory.length > 0 ? (
+                    viewingUser.taskHistory.map((task, index) => (
                       <div key={index} className={styles.taskItem}>
-                        <div><strong>Task ID:</strong> {task.id || 'N/A'}</div>
-                        <div><strong>Type:</strong> {task.type || 'Unknown'}</div>
+                        <div><strong>Title:</strong> {task.title || 'N/A'}</div>
                         <div><strong>Status:</strong> 
                           <span className={`${styles.taskStatus} ${styles[task.status?.toLowerCase()] || ''}`}>
                             {task.status || 'Unknown'}
                           </span>
                         </div>
-                        <div><strong>Credits:</strong> {task.credits || '0'}</div>
-                        <div><strong>Created:</strong> {formatDate(task.createdAt)}</div>
-                        <div><strong>Completed:</strong> {formatDate(task.completedAt)}</div>
+                        <div><strong>Credit Cost:</strong> {task.creditCost || '0'}</div>
+                        <div><strong>Duration Type:</strong> {task.durationType || 'N/A'}</div>
+                        <div><strong>Hours:</strong> {task.hours || '0'}</div>
+                        <div><strong>Stream Key:</strong> {task.streamKey || 'N/A'}</div>
+                        <div><strong>Video ID:</strong> {task.videoId || 'N/A'}</div>
+                        <div><strong>Created At:</strong> {formatDate(task.createdAt)}</div>
+                        <div><strong>Created Date:</strong> {task.createdDate ? new Date(task.createdDate).toLocaleDateString() : 'N/A'}</div>
                       </div>
                     ))
                   ) : (
-                    <p className={styles.emptyMessage}>No tasks found</p>
+                    <p className={styles.emptyMessage}>No task history found</p>
                   )}
                 </div>
               </div>
@@ -570,13 +588,13 @@ export default function AdminPanel() {
 
               {/* Additional sections for any other user data */}
               {Object.keys(viewingUser).filter(key => 
-                !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'liveHistory'].includes(key)
+                !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'walletHistory', 'taskHistory', 'liveHistory', 'isAdmin', 'role'].includes(key)
               ).length > 0 && (
                 <div className={styles.userDetailsSection}>
                   <h3>Additional Data</h3>
                   <div className={styles.detailsList}>
                     {Object.entries(viewingUser).filter(([key]) => 
-                      !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'liveHistory'].includes(key)
+                      !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'walletHistory', 'taskHistory', 'liveHistory', 'isAdmin', 'role'].includes(key)
                     ).map(([key, value]) => (
                       <div key={key} className={styles.detailRow}>
                         <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
