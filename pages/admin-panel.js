@@ -59,11 +59,10 @@ export default function AdminPanel() {
           id: doc.id, 
           name: data.name || "N/A",
           email: data.email || "N/A",
-          authProvider: data.authProvider || "unknown",
           creditBalance: data.creditBalance || 0,
-          emailVerified: data.emailVerified || false,
           createdAt: data.createdAt || new Date(),
           lastWalletUpdate: data.lastWalletUpdate || null,
+          isDisabled: data.isDisabled || false,
           tasks: data.tasks || [],
           wallets: data.wallets || [],
           ...data 
@@ -100,7 +99,7 @@ export default function AdminPanel() {
       name: user.name,
       email: user.email,
       creditBalance: user.creditBalance,
-      emailVerified: user.emailVerified
+      isDisabled: user.isDisabled
     });
   };
 
@@ -128,6 +127,23 @@ export default function AdminPanel() {
     setEditForm({});
   };
 
+  const handleToggleDisableUser = async (userId, currentStatus) => {
+    setActionLoading(prev => ({ ...prev, [userId]: 'toggling' }));
+    
+    try {
+      const db = getFirestore();
+      await updateDoc(doc(db, "users", userId), { isDisabled: !currentStatus });
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isDisabled: !currentStatus } : user
+      ));
+    } catch (error) {
+      console.error("Failed to toggle user status:", error);
+      alert("Failed to update user status. Please try again.");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -151,21 +167,17 @@ export default function AdminPanel() {
   const getFilteredUsers = () => {
     let filtered = users;
     
-    if (filter === "google") {
-      filtered = users.filter(user => user.authProvider === "google");
-    } else if (filter === "email") {
-      filtered = users.filter(user => user.authProvider === "email");
-    } else if (filter === "verified") {
-      filtered = users.filter(user => user.emailVerified);
-    } else if (filter === "unverified") {
-      filtered = users.filter(user => !user.emailVerified);
+    if (filter === "disabled") {
+      filtered = users.filter(user => user.isDisabled);
+    } else if (filter === "active") {
+      filtered = users.filter(user => !user.isDisabled);
     }
 
     return filtered.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
       
-      if (sortBy === "createdAt") {
+      if (sortBy === "createdAt" || sortBy === "lastWalletUpdate") {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
       }
@@ -188,9 +200,8 @@ export default function AdminPanel() {
   }
 
   const filteredUsers = getFilteredUsers();
-  const googleUsers = users.filter(user => user.authProvider === "google").length;
-  const emailUsers = users.filter(user => user.authProvider === "email").length;
-  const verifiedUsers = users.filter(user => user.emailVerified).length;
+  const activeUsers = users.filter(user => !user.isDisabled).length;
+  const disabledUsers = users.filter(user => user.isDisabled).length;
   const totalCreditBalance = users.reduce((sum, user) => sum + (user.creditBalance || 0), 0);
 
   return (
@@ -221,16 +232,12 @@ export default function AdminPanel() {
             <p className={styles.statNumber}>{users.length}</p>
           </div>
           <div className={styles.statCard}>
-            <h3>Google Auth</h3>
-            <p className={styles.statNumber}>{googleUsers}</p>
+            <h3>Active Users</h3>
+            <p className={styles.statNumber}>{activeUsers}</p>
           </div>
           <div className={styles.statCard}>
-            <h3>Email Auth</h3>
-            <p className={styles.statNumber}>{emailUsers}</p>
-          </div>
-          <div className={styles.statCard}>
-            <h3>Verified Users</h3>
-            <p className={styles.statNumber}>{verifiedUsers}</p>
+            <h3>Disabled Users</h3>
+            <p className={styles.statNumber}>{disabledUsers}</p>
           </div>
           <div className={styles.statCard}>
             <h3>Total Credits</h3>
@@ -246,10 +253,8 @@ export default function AdminPanel() {
               className={styles.filterSelect}
             >
               <option value="all">All Users</option>
-              <option value="google">Google Auth</option>
-              <option value="email">Email Auth</option>
-              <option value="verified">Verified</option>
-              <option value="unverified">Unverified</option>
+              <option value="active">Active Users</option>
+              <option value="disabled">Disabled Users</option>
             </select>
             
             <select 
@@ -261,6 +266,7 @@ export default function AdminPanel() {
               <option value="name">Name</option>
               <option value="email">Email</option>
               <option value="creditBalance">Credit Balance</option>
+              <option value="lastWalletUpdate">Last Wallet Update</option>
             </select>
             
             <button 
@@ -284,10 +290,10 @@ export default function AdminPanel() {
               <div className={styles.tableHeader}>
                 <div className={styles.headerCell}>Name</div>
                 <div className={styles.headerCell}>Email</div>
-                <div className={styles.headerCell}>Auth Provider</div>
                 <div className={styles.headerCell}>Credits</div>
-                <div className={styles.headerCell}>Verified</div>
+                <div className={styles.headerCell}>Status</div>
                 <div className={styles.headerCell}>Created</div>
+                <div className={styles.headerCell}>Last Wallet Update</div>
                 <div className={styles.headerCell}>Actions</div>
               </div>
               
@@ -320,12 +326,6 @@ export default function AdminPanel() {
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <span className={`${styles.authBadge} ${styles[user.authProvider]}`}>
-                      {user.authProvider}
-                    </span>
-                  </div>
-                  
-                  <div className={styles.tableCell}>
                     {editingUser === user.id ? (
                       <input
                         type="number"
@@ -343,19 +343,23 @@ export default function AdminPanel() {
                     {editingUser === user.id ? (
                       <input
                         type="checkbox"
-                        checked={editForm.emailVerified}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, emailVerified: e.target.checked }))}
+                        checked={editForm.isDisabled}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, isDisabled: e.target.checked }))}
                         className={styles.checkbox}
                       />
                     ) : (
-                      <span className={`${styles.verifiedBadge} ${user.emailVerified ? styles.verified : styles.unverified}`}>
-                        {user.emailVerified ? "✓" : "✗"}
+                      <span className={`${styles.statusBadge} ${user.isDisabled ? styles.disabled : styles.active}`}>
+                        {user.isDisabled ? "Disabled" : "Active"}
                       </span>
                     )}
                   </div>
                   
                   <div className={styles.tableCell}>
                     <div className={styles.dateText}>{formatDate(user.createdAt)}</div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.dateText}>{formatDate(user.lastWalletUpdate)}</div>
                   </div>
                   
                   <div className={styles.tableCell}>
@@ -384,6 +388,14 @@ export default function AdminPanel() {
                             title="Edit User"
                           >
                             Edit
+                          </button>
+                          <button
+                            onClick={() => handleToggleDisableUser(user.id, user.isDisabled)}
+                            className={`${styles.actionBtn} ${user.isDisabled ? styles.enableBtn : styles.disableBtn}`}
+                            disabled={actionLoading[user.id] === 'toggling'}
+                            title={user.isDisabled ? "Enable User" : "Disable User"}
+                          >
+                            {actionLoading[user.id] === 'toggling' ? 'Updating...' : (user.isDisabled ? 'Enable' : 'Disable')}
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
