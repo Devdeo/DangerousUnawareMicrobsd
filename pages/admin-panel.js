@@ -14,6 +14,9 @@ export default function AdminPanel() {
   const [actionLoading, setActionLoading] = useState({});
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
   const router = useRouter();
 
   useEffect(() => {
@@ -56,9 +59,13 @@ export default function AdminPanel() {
           id: doc.id, 
           name: data.name || "N/A",
           email: data.email || "N/A",
-          walletBalance: data.walletBalance || 0,
-          status: data.status || "active",
+          authProvider: data.authProvider || "unknown",
+          creditBalance: data.creditBalance || 0,
+          emailVerified: data.emailVerified || false,
           createdAt: data.createdAt || new Date(),
+          lastWalletUpdate: data.lastWalletUpdate || null,
+          tasks: data.tasks || [],
+          wallets: data.wallets || [],
           ...data 
         });
       }
@@ -87,30 +94,13 @@ export default function AdminPanel() {
     }
   };
 
-  const handleToggleUserStatus = async (userId, currentStatus) => {
-    const newStatus = currentStatus === "active" ? "disabled" : "active";
-    setActionLoading(prev => ({ ...prev, [userId]: 'toggling' }));
-    
-    try {
-      const db = getFirestore();
-      await updateDoc(doc(db, "users", userId), { status: newStatus });
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, status: newStatus } : user
-      ));
-    } catch (error) {
-      console.error("Failed to update user status:", error);
-      alert("Failed to update user status. Please try again.");
-    } finally {
-      setActionLoading(prev => ({ ...prev, [userId]: null }));
-    }
-  };
-
   const handleEditUser = (user) => {
     setEditingUser(user.id);
     setEditForm({
       name: user.name,
       email: user.email,
-      walletBalance: user.walletBalance
+      creditBalance: user.creditBalance,
+      emailVerified: user.emailVerified
     });
   };
 
@@ -147,6 +137,47 @@ export default function AdminPanel() {
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    if (typeof date === 'string') {
+      return new Date(date).toLocaleDateString();
+    }
+    if (date.toDate) {
+      return date.toDate().toLocaleDateString();
+    }
+    return new Date(date).toLocaleDateString();
+  };
+
+  const getFilteredUsers = () => {
+    let filtered = users;
+    
+    if (filter === "google") {
+      filtered = users.filter(user => user.authProvider === "google");
+    } else if (filter === "email") {
+      filtered = users.filter(user => user.authProvider === "email");
+    } else if (filter === "verified") {
+      filtered = users.filter(user => user.emailVerified);
+    } else if (filter === "unverified") {
+      filtered = users.filter(user => !user.emailVerified);
+    }
+
+    return filtered.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      
+      if (sortBy === "createdAt") {
+        aVal = new Date(aVal);
+        bVal = new Date(bVal);
+      }
+      
+      if (sortOrder === "asc") {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -156,9 +187,11 @@ export default function AdminPanel() {
     );
   }
 
-  const activeUsers = users.filter(user => user.status === "active").length;
-  const disabledUsers = users.filter(user => user.status === "disabled").length;
-  const totalWalletBalance = users.reduce((sum, user) => sum + (user.walletBalance || 0), 0);
+  const filteredUsers = getFilteredUsers();
+  const googleUsers = users.filter(user => user.authProvider === "google").length;
+  const emailUsers = users.filter(user => user.authProvider === "email").length;
+  const verifiedUsers = users.filter(user => user.emailVerified).length;
+  const totalCreditBalance = users.reduce((sum, user) => sum + (user.creditBalance || 0), 0);
 
   return (
     <div className={styles.container}>
@@ -188,37 +221,77 @@ export default function AdminPanel() {
             <p className={styles.statNumber}>{users.length}</p>
           </div>
           <div className={styles.statCard}>
-            <h3>Active Users</h3>
-            <p className={styles.statNumber}>{activeUsers}</p>
+            <h3>Google Auth</h3>
+            <p className={styles.statNumber}>{googleUsers}</p>
           </div>
           <div className={styles.statCard}>
-            <h3>Disabled Users</h3>
-            <p className={styles.statNumber}>{disabledUsers}</p>
+            <h3>Email Auth</h3>
+            <p className={styles.statNumber}>{emailUsers}</p>
           </div>
           <div className={styles.statCard}>
-            <h3>Total Wallet Balance</h3>
-            <p className={styles.statNumber}>${totalWalletBalance.toFixed(2)}</p>
+            <h3>Verified Users</h3>
+            <p className={styles.statNumber}>{verifiedUsers}</p>
+          </div>
+          <div className={styles.statCard}>
+            <h3>Total Credits</h3>
+            <p className={styles.statNumber}>{totalCreditBalance.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className={styles.controls}>
+          <div className={styles.filterControls}>
+            <select 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value)}
+              className={styles.filterSelect}
+            >
+              <option value="all">All Users</option>
+              <option value="google">Google Auth</option>
+              <option value="email">Email Auth</option>
+              <option value="verified">Verified</option>
+              <option value="unverified">Unverified</option>
+            </select>
+            
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className={styles.sortSelect}
+            >
+              <option value="createdAt">Created Date</option>
+              <option value="name">Name</option>
+              <option value="email">Email</option>
+              <option value="creditBalance">Credit Balance</option>
+            </select>
+            
+            <button 
+              onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              className={styles.sortButton}
+            >
+              {sortOrder === "asc" ? "↑" : "↓"}
+            </button>
           </div>
         </div>
 
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>User Management</h2>
+          <h2 className={styles.sectionTitle}>User Management ({filteredUsers.length} users)</h2>
           
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>No users found in the database.</p>
+              <p>No users found matching the current filter.</p>
             </div>
           ) : (
             <div className={styles.userTable}>
               <div className={styles.tableHeader}>
                 <div className={styles.headerCell}>Name</div>
                 <div className={styles.headerCell}>Email</div>
-                <div className={styles.headerCell}>Wallet Balance</div>
-                <div className={styles.headerCell}>Status</div>
+                <div className={styles.headerCell}>Auth Provider</div>
+                <div className={styles.headerCell}>Credits</div>
+                <div className={styles.headerCell}>Verified</div>
+                <div className={styles.headerCell}>Created</div>
                 <div className={styles.headerCell}>Actions</div>
               </div>
               
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <div key={user.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
                     {editingUser === user.id ? (
@@ -247,23 +320,42 @@ export default function AdminPanel() {
                   </div>
                   
                   <div className={styles.tableCell}>
+                    <span className={`${styles.authBadge} ${styles[user.authProvider]}`}>
+                      {user.authProvider}
+                    </span>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
                     {editingUser === user.id ? (
                       <input
                         type="number"
-                        value={editForm.walletBalance}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, walletBalance: parseFloat(e.target.value) || 0 }))}
+                        value={editForm.creditBalance}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, creditBalance: parseFloat(e.target.value) || 0 }))}
                         className={styles.editInput}
                         step="0.01"
                       />
                     ) : (
-                      <div className={styles.walletBalance}>${user.walletBalance.toFixed(2)}</div>
+                      <div className={styles.creditBalance}>{user.creditBalance.toFixed(2)}</div>
                     )}
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <span className={`${styles.statusBadge} ${styles[user.status]}`}>
-                      {user.status}
-                    </span>
+                    {editingUser === user.id ? (
+                      <input
+                        type="checkbox"
+                        checked={editForm.emailVerified}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, emailVerified: e.target.checked }))}
+                        className={styles.checkbox}
+                      />
+                    ) : (
+                      <span className={`${styles.verifiedBadge} ${user.emailVerified ? styles.verified : styles.unverified}`}>
+                        {user.emailVerified ? "✓" : "✗"}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.dateText}>{formatDate(user.createdAt)}</div>
                   </div>
                   
                   <div className={styles.tableCell}>
@@ -292,15 +384,6 @@ export default function AdminPanel() {
                             title="Edit User"
                           >
                             Edit
-                          </button>
-                          <button
-                            onClick={() => handleToggleUserStatus(user.id, user.status)}
-                            className={`${styles.actionBtn} ${user.status === 'active' ? styles.disableBtn : styles.enableBtn}`}
-                            disabled={actionLoading[user.id] === 'toggling'}
-                            title={user.status === 'active' ? 'Disable User' : 'Enable User'}
-                          >
-                            {actionLoading[user.id] === 'toggling' ? 'Loading...' : 
-                             user.status === 'active' ? 'Disable' : 'Enable'}
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
