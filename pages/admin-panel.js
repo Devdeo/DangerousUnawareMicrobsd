@@ -17,6 +17,8 @@ export default function AdminPanel() {
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
   const router = useRouter();
 
   useEffect(() => {
@@ -173,7 +175,7 @@ export default function AdminPanel() {
       filtered = users.filter(user => !user.isDisabled);
     }
 
-    return filtered.sort((a, b) => {
+    const sorted = filtered.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
       
@@ -188,6 +190,20 @@ export default function AdminPanel() {
         return aVal < bVal ? 1 : -1;
       }
     });
+
+    return sorted;
+  };
+
+  const getPaginatedUsers = () => {
+    const filtered = getFilteredUsers();
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    const filtered = getFilteredUsers();
+    return Math.ceil(filtered.length / usersPerPage);
   };
 
   if (loading) {
@@ -200,6 +216,8 @@ export default function AdminPanel() {
   }
 
   const filteredUsers = getFilteredUsers();
+  const paginatedUsers = getPaginatedUsers();
+  const totalPages = getTotalPages();
   const activeUsers = users.filter(user => !user.isDisabled).length;
   const disabledUsers = users.filter(user => user.isDisabled).length;
   const totalCreditBalance = users.reduce((sum, user) => sum + (user.creditBalance || 0), 0);
@@ -279,25 +297,25 @@ export default function AdminPanel() {
         </div>
 
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>User Management ({filteredUsers.length} users)</h2>
+          <h2 className={styles.sectionTitle}>User Management ({filteredUsers.length} users - Page {currentPage} of {totalPages})</h2>
           
           {filteredUsers.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No users found matching the current filter.</p>
             </div>
           ) : (
-            <div className={styles.userTable}>
-              <div className={styles.tableHeader}>
-                <div className={styles.headerCell}>Name</div>
-                <div className={styles.headerCell}>Email</div>
-                <div className={styles.headerCell}>Credits</div>
-                <div className={styles.headerCell}>Status</div>
-                <div className={styles.headerCell}>Created</div>
-                <div className={styles.headerCell}>Last Wallet Update</div>
-                <div className={styles.headerCell}>Actions</div>
-              </div>
-              
-              {filteredUsers.map((user) => (
+            <>
+              <div className={styles.userTable}>
+                <div className={styles.tableHeader}>
+                  <div className={styles.headerCell}>Name</div>
+                  <div className={styles.headerCell}>Email</div>
+                  <div className={styles.headerCell}>Credits</div>
+                  <div className={styles.headerCell}>Created</div>
+                  <div className={styles.headerCell}>Last Wallet Update</div>
+                  <div className={styles.headerCell}>Actions</div>
+                </div>
+                
+                {paginatedUsers.map((user) => (
                 <div key={user.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
                     {editingUser === user.id ? (
@@ -339,20 +357,7 @@ export default function AdminPanel() {
                     )}
                   </div>
                   
-                  <div className={styles.tableCell}>
-                    {editingUser === user.id ? (
-                      <input
-                        type="checkbox"
-                        checked={editForm.isDisabled}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, isDisabled: e.target.checked }))}
-                        className={styles.checkbox}
-                      />
-                    ) : (
-                      <span className={`${styles.statusBadge} ${user.isDisabled ? styles.disabled : styles.active}`}>
-                        {user.isDisabled ? "Disabled" : "Active"}
-                      </span>
-                    )}
-                  </div>
+                  
                   
                   <div className={styles.tableCell}>
                     <div className={styles.dateText}>{formatDate(user.createdAt)}</div>
@@ -411,7 +416,40 @@ export default function AdminPanel() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+              
+              {totalPages > 1 && (
+                <div className={styles.pagination}>
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={styles.pageButton}
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className={styles.pageNumbers}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`${styles.pageButton} ${currentPage === page ? styles.activePage : ''}`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={styles.pageButton}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
