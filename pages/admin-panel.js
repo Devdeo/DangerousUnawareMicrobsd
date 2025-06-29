@@ -382,15 +382,20 @@ export default function AdminPanel() {
                   
                   <div className={styles.tableCell}>
                     {editingUser === user.id ? (
-                      <input
-                        type="number"
-                        value={editForm.creditBalance}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, creditBalance: parseFloat(e.target.value) || 0 }))}
-                        className={styles.editInput}
-                        step="0.01"
-                      />
+                      <div className={styles.creditEditContainer}>
+                        <input
+                          type="number"
+                          value={editForm.creditBalance}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, creditBalance: parseFloat(e.target.value) || 0 }))}
+                          className={styles.creditInput}
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                        />
+                        <span className={styles.currencyLabel}>Credits</span>
+                      </div>
                     ) : (
-                      <div className={styles.creditBalance}>{user.creditBalance.toFixed(2)}</div>
+                      <div className={styles.creditBalance}>{user.creditBalance.toFixed(2)} Credits</div>
                     )}
                   </div>
                   

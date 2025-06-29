@@ -261,6 +261,38 @@
 .creditBalance {
   font-weight: 600;
   color: #2d3748;
+  background: #f7fafc;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.creditEditContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.creditInput {
+  width: 100px;
+  padding: 0.5rem;
+  border: 2px solid #3182ce;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.creditInput:focus {
+  outline: none;
+  border-color: #2c5282;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.currencyLabel {
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 500;
 }
 
 .dateText {
