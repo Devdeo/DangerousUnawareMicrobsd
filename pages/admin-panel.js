@@ -19,6 +19,8 @@ export default function AdminPanel() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
+  const [viewingUser, setViewingUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -127,6 +129,16 @@ export default function AdminPanel() {
   const handleCancelEdit = () => {
     setEditingUser(null);
     setEditForm({});
+  };
+
+  const handleViewUser = (user) => {
+    setViewingUser(user);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setViewingUser(null);
   };
 
   const handleToggleDisableUser = async (userId, currentStatus) => {
@@ -388,6 +400,13 @@ export default function AdminPanel() {
                       ) : (
                         <>
                           <button
+                            onClick={() => handleViewUser(user)}
+                            className={`${styles.actionBtn} ${styles.viewBtn}`}
+                            title="View User Details"
+                          >
+                            View
+                          </button>
+                          <button
                             onClick={() => handleEditUser(user)}
                             className={`${styles.actionBtn} ${styles.editBtn}`}
                             title="Edit User"
@@ -453,6 +472,123 @@ export default function AdminPanel() {
           )}
         </div>
       </main>
+
+      {showModal && viewingUser && (
+        <div className={styles.modalOverlay} onClick={handleCloseModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>User Details: {viewingUser.name}</h2>
+              <button onClick={handleCloseModal} className={styles.closeBtn}>×</button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              <div className={styles.userDetailsSection}>
+                <h3>Basic Information</h3>
+                <div className={styles.detailRow}>
+                  <strong>Name:</strong> {viewingUser.name}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Email:</strong> {viewingUser.email}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Credit Balance:</strong> {viewingUser.creditBalance?.toFixed(2) || '0.00'}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Created At:</strong> {formatDate(viewingUser.createdAt)}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Last Wallet Update:</strong> {formatDate(viewingUser.lastWalletUpdate)}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Status:</strong> 
+                  <span className={`${styles.statusBadge} ${viewingUser.isDisabled ? styles.disabled : styles.active}`}>
+                    {viewingUser.isDisabled ? 'Disabled' : 'Active'}
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.userDetailsSection}>
+                <h3>Wallets ({viewingUser.wallets?.length || 0})</h3>
+                <div className={styles.detailsList}>
+                  {viewingUser.wallets && viewingUser.wallets.length > 0 ? (
+                    viewingUser.wallets.map((wallet, index) => (
+                      <div key={index} className={styles.walletItem}>
+                        <div><strong>Address:</strong> {wallet.address || 'N/A'}</div>
+                        <div><strong>Type:</strong> {wallet.type || 'Unknown'}</div>
+                        <div><strong>Balance:</strong> {wallet.balance || '0'}</div>
+                        <div><strong>Added:</strong> {formatDate(wallet.createdAt)}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={styles.emptyMessage}>No wallets found</p>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.userDetailsSection}>
+                <h3>Task History ({viewingUser.tasks?.length || 0})</h3>
+                <div className={styles.detailsList}>
+                  {viewingUser.tasks && viewingUser.tasks.length > 0 ? (
+                    viewingUser.tasks.map((task, index) => (
+                      <div key={index} className={styles.taskItem}>
+                        <div><strong>Task ID:</strong> {task.id || 'N/A'}</div>
+                        <div><strong>Type:</strong> {task.type || 'Unknown'}</div>
+                        <div><strong>Status:</strong> 
+                          <span className={`${styles.taskStatus} ${styles[task.status?.toLowerCase()] || ''}`}>
+                            {task.status || 'Unknown'}
+                          </span>
+                        </div>
+                        <div><strong>Credits:</strong> {task.credits || '0'}</div>
+                        <div><strong>Created:</strong> {formatDate(task.createdAt)}</div>
+                        <div><strong>Completed:</strong> {formatDate(task.completedAt)}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={styles.emptyMessage}>No tasks found</p>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.userDetailsSection}>
+                <h3>Live History</h3>
+                <div className={styles.detailsList}>
+                  {viewingUser.liveHistory && viewingUser.liveHistory.length > 0 ? (
+                    viewingUser.liveHistory.map((session, index) => (
+                      <div key={index} className={styles.liveItem}>
+                        <div><strong>Session ID:</strong> {session.id || 'N/A'}</div>
+                        <div><strong>Duration:</strong> {session.duration || 'N/A'}</div>
+                        <div><strong>Viewers:</strong> {session.viewers || '0'}</div>
+                        <div><strong>Started:</strong> {formatDate(session.startTime)}</div>
+                        <div><strong>Ended:</strong> {formatDate(session.endTime)}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={styles.emptyMessage}>No live history found</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional sections for any other user data */}
+              {Object.keys(viewingUser).filter(key => 
+                !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'liveHistory'].includes(key)
+              ).length > 0 && (
+                <div className={styles.userDetailsSection}>
+                  <h3>Additional Data</h3>
+                  <div className={styles.detailsList}>
+                    {Object.entries(viewingUser).filter(([key]) => 
+                      !['id', 'name', 'email', 'creditBalance', 'createdAt', 'lastWalletUpdate', 'isDisabled', 'wallets', 'tasks', 'liveHistory'].includes(key)
+                    ).map(([key, value]) => (
+                      <div key={key} className={styles.detailRow}>
+                        <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
