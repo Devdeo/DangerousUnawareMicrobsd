@@ -517,10 +517,10 @@ export default function AdminPanel() {
               </div>
 
               <div className={styles.userDetailsSection}>
-                <h3>Wallet History ({viewingUser.walletHistory?.length || 0})</h3>
+                <h3>Wallet History ({viewingUser.wallets?.length || 0})</h3>
                 <div className={styles.detailsList}>
-                  {viewingUser.walletHistory && viewingUser.walletHistory.length > 0 ? (
-                    viewingUser.walletHistory.map((transaction, index) => (
+                  {viewingUser.wallets && viewingUser.wallets.length > 0 ? (
+                    viewingUser.wallets.map((transaction, index) => (
                       <div key={index} className={styles.walletItem}>
                         <div><strong>Balance:</strong> {transaction.balance || '0'}</div>
                         <div><strong>Description:</strong> {transaction.description || 'N/A'}</div>
@@ -541,10 +541,10 @@ export default function AdminPanel() {
               </div>
 
               <div className={styles.userDetailsSection}>
-                <h3>Task History ({viewingUser.taskHistory?.length || 0})</h3>
+                <h3>Task History ({viewingUser.tasks?.length || 0})</h3>
                 <div className={styles.detailsList}>
-                  {viewingUser.taskHistory && viewingUser.taskHistory.length > 0 ? (
-                    viewingUser.taskHistory.map((task, index) => (
+                  {viewingUser.tasks && viewingUser.tasks.length > 0 ? (
+                    viewingUser.tasks.map((task, index) => (
                       <div key={index} className={styles.taskItem}>
                         <div><strong>Title:</strong> {task.title || 'N/A'}</div>
                         <div><strong>Status:</strong> 
