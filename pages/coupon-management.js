@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../styles/AdminPanel.module.css";
+import SkeletonLoader from "../components/SkeletonLoader";
 
 export default function CouponManagement() {
   const [loading, setLoading] = useState(true);
@@ -256,9 +257,40 @@ export default function CouponManagement() {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-        <p>Loading coupon management...</p>
+      <div className={styles.container}>
+        <Head>
+          <title>Coupon Management - Admin Dashboard</title>
+          <meta name="description" content="Coupon management for admin dashboard" />
+        </Head>
+
+        <header className={styles.header}>
+          <div className={styles.headerContent}>
+            <h1 className={styles.title}>Coupon Management</h1>
+            <div className={styles.userInfo}>
+              <Link href="/admin-panel" className={styles.navLink}>
+                Overview
+              </Link>
+              <Link href="/user-management" className={styles.navLink}>
+                Users
+              </Link>
+              <Link href="/email-management" className={styles.navLink}>
+                Email
+              </Link>
+              <span className={styles.welcome}>
+                Loading...
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <main className={styles.main}>
+          <SkeletonLoader type="stats" count={4} />
+          
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Coupon Management</h2>
+            <SkeletonLoader type="table" count={5} />
+          </div>
+        </main>
       </div>
     );
   }
@@ -330,10 +362,7 @@ export default function CouponManagement() {
           <h2 className={styles.sectionTitle}>Coupon Management ({coupons.length} coupons)</h2>
           
           {couponsLoading ? (
-            <div className={styles.loading}>
-              <div className={styles.spinner}></div>
-              <p>Loading coupons...</p>
-            </div>
+            <SkeletonLoader type="table" count={5} />
           ) : coupons.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No coupons found. Create your first coupon to get started.</p>
@@ -674,10 +703,7 @@ export default function CouponManagement() {
             
             <div className={styles.modalContent}>
               {loadingCouponUsers ? (
-                <div className={styles.loading}>
-                  <div className={styles.spinner}></div>
-                  <p>Loading users...</p>
-                </div>
+                <SkeletonLoader type="userDetails" count={5} />
               ) : couponUsers.length === 0 ? (
                 <div className={styles.emptyState}>
                   <p>No users have used this coupon yet.</p>

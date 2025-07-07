@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "../styles/AdminPanel.module.css";
+import SkeletonLoader from "../components/SkeletonLoader";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -315,9 +316,40 @@ export default function UserManagement() {
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-        <p>Loading user management...</p>
+      <div className={styles.container}>
+        <Head>
+          <title>User Management - Admin Dashboard</title>
+          <meta name="description" content="User management for admin dashboard" />
+        </Head>
+
+        <header className={styles.header}>
+          <div className={styles.headerContent}>
+            <h1 className={styles.title}>User Management</h1>
+            <div className={styles.userInfo}>
+              <Link href="/admin-panel" className={styles.navLink}>
+                Overview
+              </Link>
+              <Link href="/coupon-management" className={styles.navLink}>
+                Coupons
+              </Link>
+              <Link href="/email-management" className={styles.navLink}>
+                Email
+              </Link>
+              <span className={styles.welcome}>
+                Loading...
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <main className={styles.main}>
+          <SkeletonLoader type="stats" count={4} />
+          
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>User Management</h2>
+            <SkeletonLoader type="table" count={5} />
+          </div>
+        </main>
       </div>
     );
   }
