@@ -164,6 +164,77 @@
   margin-top: 1rem;
 }
 
+.couponTable {
+  overflow-x: auto;
+}
+
+.couponTable .tableHeader,
+.couponTable .tableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr 0.8fr 1fr;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.couponCode {
+  font-weight: 600;
+  color: #2d3748;
+  font-family: 'Courier New', monospace;
+  background: #f7fafc;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.discountType {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.discountValue {
+  font-weight: 600;
+  color: #38a169;
+}
+
+.usageInfo {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.statusBadge.inactive {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #4a5568;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #4a5568;
+}
+
+.spinner {
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #4299e1;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .filterSelect,
 .sortSelect {
   padding: 0.5rem;

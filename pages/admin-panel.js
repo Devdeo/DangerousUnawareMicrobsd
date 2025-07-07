@@ -31,6 +31,8 @@ export default function AdminPanel() {
     isActive: true
   });
   const [couponLoading, setCouponLoading] = useState(false);
+  const [coupons, setCoupons] = useState([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function AdminPanel() {
 
         setCurrentUser(auth.currentUser);
         await fetchUsers();
+        await fetchCoupons();
       } catch (error) {
         console.error("Auth check failed:", error);
         router.push("/");
@@ -111,6 +114,30 @@ export default function AdminPanel() {
       setUsers(allUsers);
     } catch (error) {
       console.error("Failed to fetch users:", error);
+    }
+  };
+
+  const fetchCoupons = async () => {
+    setCouponsLoading(true);
+    try {
+      const db = getFirestore();
+      const couponsCol = collection(db, "coupons");
+      const snapshot = await getDocs(couponsCol);
+
+      const allCoupons = [];
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        allCoupons.push({
+          id: doc.id,
+          ...data
+        });
+      });
+
+      setCoupons(allCoupons);
+    } catch (error) {
+      console.error("Failed to fetch coupons:", error);
+    } finally {
+      setCouponsLoading(false);
     }
   };
 
@@ -221,6 +248,7 @@ export default function AdminPanel() {
           usageLimit: '',
           isActive: true
         });
+        await fetchCoupons(); // Refresh the coupons list
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -555,6 +583,80 @@ export default function AdminPanel() {
                 </div>
               )}
             </>
+          )}
+        </div>
+
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Coupon Management ({coupons.length} coupons)</h2>
+          
+          {couponsLoading ? (
+            <div className={styles.loading}>
+              <div className={styles.spinner}></div>
+              <p>Loading coupons...</p>
+            </div>
+          ) : coupons.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p>No coupons found. Create your first coupon to get started.</p>
+            </div>
+          ) : (
+            <div className={styles.couponTable}>
+              <div className={styles.tableHeader}>
+                <div className={styles.headerCell}>Code</div>
+                <div className={styles.headerCell}>Type</div>
+                <div className={styles.headerCell}>Value</div>
+                <div className={styles.headerCell}>Usage</div>
+                <div className={styles.headerCell}>Expiration</div>
+                <div className={styles.headerCell}>Status</div>
+                <div className={styles.headerCell}>Created</div>
+              </div>
+              
+              {coupons.map((coupon) => (
+                <div key={coupon.id} className={styles.tableRow}>
+                  <div className={styles.tableCell}>
+                    <div className={styles.couponCode}>{coupon.code}</div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.discountType}>
+                      {coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.discountValue}>
+                      {coupon.discountType === 'percentage' 
+                        ? `${coupon.discountValue}%` 
+                        : `${coupon.discountValue} Credits`}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.usageInfo}>
+                      {coupon.usedCount || 0}
+                      {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ' / ∞'}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.dateText}>
+                      {coupon.expirationDate 
+                        ? formatDate(coupon.expirationDate) 
+                        : 'No expiration'}
+                    </div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <span className={`${styles.statusBadge} ${coupon.isActive ? styles.active : styles.inactive}`}>
+                      {coupon.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.dateText}>{formatDate(coupon.createdAt)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </main>
