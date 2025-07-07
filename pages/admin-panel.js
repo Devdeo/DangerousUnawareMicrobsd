@@ -33,6 +33,10 @@ export default function AdminPanel() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [editCouponForm, setEditCouponForm] = useState({});
+  const [viewingCoupon, setViewingCoupon] = useState(null);
+  const [showCouponViewModal, setShowCouponViewModal] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -257,6 +261,86 @@ export default function AdminPanel() {
       alert('Failed to create coupon. Please try again.');
     } finally {
       setCouponLoading(false);
+    }
+  };
+
+  const handleViewCoupon = (coupon) => {
+    setViewingCoupon(coupon);
+    setShowCouponViewModal(true);
+  };
+
+  const handleEditCoupon = (coupon) => {
+    setEditingCoupon(coupon.id);
+    setEditCouponForm({
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      expirationDate: coupon.expirationDate ? 
+        (coupon.expirationDate.toDate ? 
+          coupon.expirationDate.toDate().toISOString().split('T')[0] : 
+          new Date(coupon.expirationDate).toISOString().split('T')[0]) : '',
+      usageLimit: coupon.usageLimit || '',
+      isActive: coupon.isActive
+    });
+  };
+
+  const handleSaveCouponEdit = async (couponId) => {
+    setActionLoading(prev => ({ ...prev, [couponId]: 'saving' }));
+    
+    try {
+      const db = getFirestore();
+      const updateData = { ...editCouponForm };
+      
+      // Convert date string to Date object if provided
+      if (updateData.expirationDate) {
+        updateData.expirationDate = new Date(updateData.expirationDate);
+      } else {
+        updateData.expirationDate = null;
+      }
+      
+      // Convert usage limit to number if provided
+      if (updateData.usageLimit) {
+        updateData.usageLimit = Number(updateData.usageLimit);
+      } else {
+        updateData.usageLimit = null;
+      }
+      
+      updateData.discountValue = Number(updateData.discountValue);
+      
+      await updateDoc(doc(db, "coupons", couponId), updateData);
+      
+      setCoupons(coupons.map(coupon => 
+        coupon.id === couponId ? { ...coupon, ...updateData } : coupon
+      ));
+      setEditingCoupon(null);
+      setEditCouponForm({});
+    } catch (error) {
+      console.error("Failed to update coupon:", error);
+      alert("Failed to update coupon. Please try again.");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [couponId]: null }));
+    }
+  };
+
+  const handleCancelCouponEdit = () => {
+    setEditingCoupon(null);
+    setEditCouponForm({});
+  };
+
+  const handleDeleteCoupon = async (couponId) => {
+    if (!confirm("Are you sure you want to delete this coupon? This action cannot be undone.")) {
+      return;
+    }
+
+    setActionLoading(prev => ({ ...prev, [couponId]: 'deleting' }));
+    try {
+      const db = getFirestore();
+      await deleteDoc(doc(db, "coupons", couponId));
+      setCoupons(coupons.filter(coupon => coupon.id !== couponId));
+    } catch (error) {
+      console.error("Failed to delete coupon:", error);
+      alert("Failed to delete coupon. Please try again.");
+    } finally {
+      setActionLoading(prev => ({ ...prev, [couponId]: null }));
     }
   };
 
@@ -608,6 +692,7 @@ export default function AdminPanel() {
                 <div className={styles.headerCell}>Expiration</div>
                 <div className={styles.headerCell}>Status</div>
                 <div className={styles.headerCell}>Created</div>
+                <div className={styles.headerCell}>Actions</div>
               </div>
               
               {coupons.map((coupon) => (
@@ -617,17 +702,40 @@ export default function AdminPanel() {
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <div className={styles.discountType}>
-                      {coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
-                    </div>
+                    {editingCoupon === coupon.id ? (
+                      <select
+                        value={editCouponForm.discountType}
+                        onChange={(e) => setEditCouponForm(prev => ({ ...prev, discountType: e.target.value }))}
+                        className={styles.editInput}
+                      >
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                    ) : (
+                      <div className={styles.discountType}>
+                        {coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                      </div>
+                    )}
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <div className={styles.discountValue}>
-                      {coupon.discountType === 'percentage' 
-                        ? `${coupon.discountValue}%` 
-                        : `${coupon.discountValue} Credits`}
-                    </div>
+                    {editingCoupon === coupon.id ? (
+                      <input
+                        type="number"
+                        value={editCouponForm.discountValue}
+                        onChange={(e) => setEditCouponForm(prev => ({ ...prev, discountValue: e.target.value }))}
+                        className={styles.editInput}
+                        min="0"
+                        max={editCouponForm.discountType === 'percentage' ? '100' : undefined}
+                        step="0.01"
+                      />
+                    ) : (
+                      <div className={styles.discountValue}>
+                        {coupon.discountType === 'percentage' 
+                          ? `${coupon.discountValue}%` 
+                          : `${coupon.discountValue} Credits`}
+                      </div>
+                    )}
                   </div>
                   
                   <div className={styles.tableCell}>
@@ -638,21 +746,89 @@ export default function AdminPanel() {
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <div className={styles.dateText}>
-                      {coupon.expirationDate 
-                        ? formatDate(coupon.expirationDate) 
-                        : 'No expiration'}
-                    </div>
+                    {editingCoupon === coupon.id ? (
+                      <input
+                        type="date"
+                        value={editCouponForm.expirationDate}
+                        onChange={(e) => setEditCouponForm(prev => ({ ...prev, expirationDate: e.target.value }))}
+                        className={styles.editInput}
+                      />
+                    ) : (
+                      <div className={styles.dateText}>
+                        {coupon.expirationDate 
+                          ? formatDate(coupon.expirationDate) 
+                          : 'No expiration'}
+                      </div>
+                    )}
                   </div>
                   
                   <div className={styles.tableCell}>
-                    <span className={`${styles.statusBadge} ${coupon.isActive ? styles.active : styles.inactive}`}>
-                      {coupon.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    {editingCoupon === coupon.id ? (
+                      <label className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={editCouponForm.isActive}
+                          onChange={(e) => setEditCouponForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                          className={styles.checkbox}
+                        />
+                        Active
+                      </label>
+                    ) : (
+                      <span className={`${styles.statusBadge} ${coupon.isActive ? styles.active : styles.inactive}`}>
+                        {coupon.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    )}
                   </div>
                   
                   <div className={styles.tableCell}>
                     <div className={styles.dateText}>{formatDate(coupon.createdAt)}</div>
+                  </div>
+                  
+                  <div className={styles.tableCell}>
+                    <div className={styles.actionButtons}>
+                      {editingCoupon === coupon.id ? (
+                        <>
+                          <button
+                            onClick={() => handleSaveCouponEdit(coupon.id)}
+                            className={`${styles.actionBtn} ${styles.saveBtn}`}
+                            disabled={actionLoading[coupon.id] === 'saving'}
+                          >
+                            {actionLoading[coupon.id] === 'saving' ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={handleCancelCouponEdit}
+                            className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleViewCoupon(coupon)}
+                            className={`${styles.actionBtn} ${styles.viewBtn}`}
+                            title="View Coupon Details"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleEditCoupon(coupon)}
+                            className={`${styles.actionBtn} ${styles.editBtn}`}
+                            title="Edit Coupon"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCoupon(coupon.id)}
+                            className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                            disabled={actionLoading[coupon.id] === 'deleting'}
+                            title="Delete Coupon"
+                          >
+                            {actionLoading[coupon.id] === 'deleting' ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -769,6 +945,57 @@ export default function AdminPanel() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCouponViewModal && viewingCoupon && (
+        <div className={styles.modalOverlay} onClick={() => setShowCouponViewModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Coupon Details: {viewingCoupon.code}</h2>
+              <button onClick={() => setShowCouponViewModal(false)} className={styles.closeBtn}>×</button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              <div className={styles.userDetailsSection}>
+                <h3>Coupon Information</h3>
+                <div className={styles.detailRow}>
+                  <strong>Code:</strong> {viewingCoupon.code}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Discount Type:</strong> {viewingCoupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Discount Value:</strong> {viewingCoupon.discountType === 'percentage' 
+                    ? `${viewingCoupon.discountValue}%` 
+                    : `${viewingCoupon.discountValue} Credits`}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Usage Count:</strong> {viewingCoupon.usedCount || 0}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Usage Limit:</strong> {viewingCoupon.usageLimit || 'Unlimited'}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Expiration Date:</strong> {viewingCoupon.expirationDate 
+                    ? formatDate(viewingCoupon.expirationDate) 
+                    : 'No expiration'}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Status:</strong> 
+                  <span className={`${styles.statusBadge} ${viewingCoupon.isActive ? styles.active : styles.inactive}`}>
+                    {viewingCoupon.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Created At:</strong> {formatDate(viewingCoupon.createdAt)}
+                </div>
+                <div className={styles.detailRow}>
+                  <strong>Created By:</strong> {viewingCoupon.createdBy || 'N/A'}
+                </div>
+              </div>
             </div>
           </div>
         </div>
