@@ -21,6 +21,16 @@ export default function AdminPanel() {
   const [usersPerPage] = useState(10);
   const [viewingUser, setViewingUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    discountType: 'percentage',
+    discountValue: '',
+    expirationDate: '',
+    usageLimit: '',
+    isActive: true
+  });
+  const [couponLoading, setCouponLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -183,6 +193,45 @@ export default function AdminPanel() {
     }
   };
 
+  const handleCreateCoupon = async (e) => {
+    e.preventDefault();
+    setCouponLoading(true);
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/create-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(couponForm)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Coupon created successfully!');
+        setShowCouponModal(false);
+        setCouponForm({
+          code: '',
+          discountType: 'percentage',
+          discountValue: '',
+          expirationDate: '',
+          usageLimit: '',
+          isActive: true
+        });
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to create coupon:', error);
+      alert('Failed to create coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -302,6 +351,13 @@ export default function AdminPanel() {
 
         <div className={styles.controls}>
           <div className={styles.filterControls}>
+            <button 
+              onClick={() => setShowCouponModal(true)}
+              className={styles.createCouponBtn}
+            >
+              Create Coupon
+            </button>
+            
             <select 
               value={filter} 
               onChange={(e) => setFilter(e.target.value)}
@@ -502,6 +558,119 @@ export default function AdminPanel() {
           )}
         </div>
       </main>
+
+      {showCouponModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowCouponModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Create New Coupon</h2>
+              <button onClick={() => setShowCouponModal(false)} className={styles.closeBtn}>×</button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              <form onSubmit={handleCreateCoupon} className={styles.couponForm}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="couponCode">Coupon Code *</label>
+                  <input
+                    id="couponCode"
+                    type="text"
+                    value={couponForm.code}
+                    onChange={(e) => setCouponForm(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    placeholder="Enter coupon code (e.g., SAVE20)"
+                    className={styles.formInput}
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="discountType">Discount Type *</label>
+                  <select
+                    id="discountType"
+                    value={couponForm.discountType}
+                    onChange={(e) => setCouponForm(prev => ({ ...prev, discountType: e.target.value }))}
+                    className={styles.formInput}
+                    required
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed Amount</option>
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="discountValue">
+                    Discount Value * {couponForm.discountType === 'percentage' ? '(%)' : '(Credits)'}
+                  </label>
+                  <input
+                    id="discountValue"
+                    type="number"
+                    value={couponForm.discountValue}
+                    onChange={(e) => setCouponForm(prev => ({ ...prev, discountValue: e.target.value }))}
+                    placeholder={couponForm.discountType === 'percentage' ? 'e.g., 20' : 'e.g., 5.00'}
+                    className={styles.formInput}
+                    min="0"
+                    max={couponForm.discountType === 'percentage' ? '100' : undefined}
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="expirationDate">Expiration Date</label>
+                  <input
+                    id="expirationDate"
+                    type="date"
+                    value={couponForm.expirationDate}
+                    onChange={(e) => setCouponForm(prev => ({ ...prev, expirationDate: e.target.value }))}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label htmlFor="usageLimit">Usage Limit</label>
+                  <input
+                    id="usageLimit"
+                    type="number"
+                    value={couponForm.usageLimit}
+                    onChange={(e) => setCouponForm(prev => ({ ...prev, usageLimit: e.target.value }))}
+                    placeholder="Leave empty for unlimited use"
+                    className={styles.formInput}
+                    min="1"
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      checked={couponForm.isActive}
+                      onChange={(e) => setCouponForm(prev => ({ ...prev, isActive: e.target.checked }))}
+                      className={styles.checkbox}
+                    />
+                    Active
+                  </label>
+                </div>
+
+                <div className={styles.formActions}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCouponModal(false)}
+                    className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={couponLoading}
+                    className={`${styles.actionBtn} ${styles.saveBtn}`}
+                  >
+                    {couponLoading ? 'Creating...' : 'Create Coupon'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && viewingUser && (
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
