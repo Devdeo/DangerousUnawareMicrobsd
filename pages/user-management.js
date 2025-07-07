@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { auth } from "../firebase/config";
 import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
@@ -23,6 +22,11 @@ export default function UserManagement() {
   const [viewingUser, setViewingUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -60,7 +64,7 @@ export default function UserManagement() {
       const allUsers = [];
       for (const doc of snapshot.docs) {
         const data = doc.data();
-        
+
         // Skip admin users
         if (data.isAdmin || data.role === 'admin') {
           continue;
@@ -81,7 +85,7 @@ export default function UserManagement() {
           id: walletDoc.id,
           ...walletDoc.data()
         }));
-        
+
         allUsers.push({ 
           id: doc.id, 
           name: data.name || "N/A",
@@ -135,7 +139,7 @@ export default function UserManagement() {
 
   const handleSaveEdit = async (userId) => {
     setActionLoading(prev => ({ ...prev, [userId]: 'saving' }));
-    
+
     try {
       const db = getFirestore();
       await updateDoc(doc(db, "users", userId), editForm);
@@ -169,14 +173,14 @@ export default function UserManagement() {
 
   const handleToggleDisableUser = async (userId, currentStatus) => {
     setActionLoading(prev => ({ ...prev, [userId]: 'toggling' }));
-    
+
     try {
       const db = getFirestore();
       await updateDoc(doc(db, "users", userId), { isDisabled: !currentStatus });
       setUsers(users.map(user => 
         user.id === userId ? { ...user, isDisabled: !currentStatus } : user
       ));
-      
+
       // Send email notification
       const user = users.find(u => u.id === userId);
       if (user?.email) {
@@ -223,7 +227,7 @@ export default function UserManagement() {
     }
 
     setActionLoading(prev => ({ ...prev, 'bulk-email': 'sending' }));
-    
+
     try {
       const token = await auth.currentUser.getIdToken();
       const response = await fetch('/api/send-bulk-email', {
@@ -275,7 +279,7 @@ export default function UserManagement() {
 
   const getFilteredUsers = () => {
     let filtered = users;
-    
+
     if (filter === "disabled") {
       filtered = users.filter(user => user.isDisabled);
     } else if (filter === "active") {
@@ -285,12 +289,12 @@ export default function UserManagement() {
     const sorted = filtered.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
-      
+
       if (sortBy === "createdAt" || sortBy === "lastWalletUpdate") {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
       }
-      
+
       if (sortOrder === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {
@@ -390,7 +394,7 @@ export default function UserManagement() {
               <option value="active">Active Users</option>
               <option value="disabled">Disabled Users</option>
             </select>
-            
+
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value)}
@@ -402,14 +406,14 @@ export default function UserManagement() {
               <option value="creditBalance">Credit Balance</option>
               <option value="lastWalletUpdate">Last Wallet Update</option>
             </select>
-            
+
             <button 
               onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
               className={styles.sortButton}
             >
               {sortOrder === "asc" ? "↑" : "↓"}
             </button>
-            
+
             <button 
               onClick={handleSendBulkEmail}
               className={`${styles.actionBtn} ${styles.emailBtn}`}
@@ -422,7 +426,7 @@ export default function UserManagement() {
 
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>User Management ({filteredUsers.length} users - Page {currentPage} of {totalPages})</h2>
-          
+
           {filteredUsers.length === 0 ? (
             <div className={styles.emptyState}>
               <p>No users found matching the current filter.</p>
@@ -438,7 +442,7 @@ export default function UserManagement() {
                   <div className={styles.headerCell}>Last Wallet Update</div>
                   <div className={styles.headerCell}>Actions</div>
                 </div>
-                
+
                 {paginatedUsers.map((user) => (
                 <div key={user.id} className={styles.tableRow}>
                   <div className={styles.tableCell}>
@@ -453,7 +457,7 @@ export default function UserManagement() {
                       <div className={styles.userName}>{user.name}</div>
                     )}
                   </div>
-                  
+
                   <div className={styles.tableCell}>
                     {editingUser === user.id ? (
                       <input
@@ -466,7 +470,7 @@ export default function UserManagement() {
                       <div className={styles.userEmail}>{user.email}</div>
                     )}
                   </div>
-                  
+
                   <div className={styles.tableCell}>
                     {editingUser === user.id ? (
                       <div className={styles.creditEditContainer}>
@@ -485,15 +489,15 @@ export default function UserManagement() {
                       <div className={styles.creditBalance}>{user.creditBalance.toFixed(2)} Credits</div>
                     )}
                   </div>
-                  
+
                   <div className={styles.tableCell}>
                     <div className={styles.dateText}>{formatDate(user.createdAt)}</div>
                   </div>
-                  
+
                   <div className={styles.tableCell}>
                     <div className={styles.dateText}>{formatDate(user.lastWalletUpdate)}</div>
                   </div>
-                  
+
                   <div className={styles.tableCell}>
                     <div className={styles.actionButtons}>
                       {editingUser === user.id ? (
@@ -551,7 +555,7 @@ export default function UserManagement() {
                 </div>
               ))}
               </div>
-              
+
               {totalPages > 1 && (
                 <div className={styles.pagination}>
                   <button 
@@ -561,7 +565,7 @@ export default function UserManagement() {
                   >
                     Previous
                   </button>
-                  
+
                   <div className={styles.pageNumbers}>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
@@ -573,7 +577,7 @@ export default function UserManagement() {
                       </button>
                     ))}
                   </div>
-                  
+
                   <button 
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
@@ -595,7 +599,7 @@ export default function UserManagement() {
               <h2>User Details: {viewingUser.name}</h2>
               <button onClick={handleCloseModal} className={styles.closeBtn}>×</button>
             </div>
-            
+
             <div className={styles.modalContent}>
               <div className={styles.userDetailsSection}>
                 <h3>Basic Information</h3>

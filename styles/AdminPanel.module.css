@@ -1,44 +1,33 @@
 
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-}
-
-.container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.03"><circle cx="30" cy="30" r="1"/></g></svg>');
-  pointer-events: none;
-}
-
-.header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 1.5rem 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
-}
-
-.headerContent {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  background: #f8fafc;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  position: relative;
 }
 
-.title {
-  font-size: 2.25rem;
+.sidebar {
+  width: 280px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 100;
+}
+
+.sidebarHeader {
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebarTitle {
+  font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -46,35 +35,155 @@
   letter-spacing: -0.025em;
 }
 
-.userInfo {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+.sidebarNav {
+  flex: 1;
+  padding: 1.5rem 0;
+  overflow-y: auto;
 }
 
-.welcome {
-  color: #4a5568;
-  font-size: 0.9rem;
-  font-weight: 500;
+.sidebarSection {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .navLink {
-  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #cbd5e1;
   text-decoration: none;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
   transition: all 0.3s ease;
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-left: 3px solid transparent;
 }
 
 .navLink:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  border-left-color: #60a5fa;
+}
+
+.navLink.active {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+  color: white;
+  border-left-color: #60a5fa;
+}
+
+.navIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: currentColor;
+}
+
+.sidebarFooter {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.userDetails {
+  flex: 1;
+}
+
+.userName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.userEmail {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.logoutBtn {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.logoutBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 280px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.welcome {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .quickActions {
@@ -213,11 +322,10 @@
 }
 
 .main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 3rem 2rem;
-  position: relative;
-  z-index: 5;
+  flex: 1;
+  padding: 2rem;
+  background: #f8fafc;
+  overflow-y: auto;
 }
 
 .stats {
@@ -728,6 +836,66 @@
   box-shadow: none;
 }
 
+.mobileMenuToggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #1e293b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.mobileMenuToggle:hover {
+  background: #f1f5f9;
+}
+
+.mobileOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+.mobileOverlay.active {
+  display: block;
+}
+
+.sidebar.mobileOpen {
+  transform: translateX(0);
+}
+
+@media (max-width: 1024px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .mobileMenuToggle {
+    display: block;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .quickActions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .emailSection {
     grid-template-columns: 1fr;
@@ -745,17 +913,25 @@
   }
 
   .main {
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
 
   .stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
 
   .quickActions {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
   }
 }
 
