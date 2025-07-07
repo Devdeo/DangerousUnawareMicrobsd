@@ -37,6 +37,10 @@ export default function AdminPanel() {
   const [editCouponForm, setEditCouponForm] = useState({});
   const [viewingCoupon, setViewingCoupon] = useState(null);
   const [showCouponViewModal, setShowCouponViewModal] = useState(false);
+  const [couponUsers, setCouponUsers] = useState([]);
+  const [loadingCouponUsers, setLoadingCouponUsers] = useState(false);
+  const [showCouponUsersModal, setShowCouponUsersModal] = useState(false);
+  const [selectedCouponForUsers, setSelectedCouponForUsers] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -341,6 +345,37 @@ export default function AdminPanel() {
       alert("Failed to delete coupon. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [couponId]: null }));
+    }
+  };
+
+  const handleViewCouponUsers = async (coupon) => {
+    setSelectedCouponForUsers(coupon);
+    setLoadingCouponUsers(true);
+    setShowCouponUsersModal(true);
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch(`/api/coupon-users?couponCode=${encodeURIComponent(coupon.code)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCouponUsers(data.users);
+      } else {
+        alert(`Error: ${data.error}`);
+        setCouponUsers([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch coupon users:', error);
+      alert('Failed to fetch coupon users. Please try again.');
+      setCouponUsers([]);
+    } finally {
+      setLoadingCouponUsers(false);
     }
   };
 
@@ -812,6 +847,13 @@ export default function AdminPanel() {
                             View
                           </button>
                           <button
+                            onClick={() => handleViewCouponUsers(coupon)}
+                            className={`${styles.actionBtn} ${styles.usersBtn}`}
+                            title="View Users Who Used This Coupon"
+                          >
+                            Users
+                          </button>
+                          <button
                             onClick={() => handleEditCoupon(coupon)}
                             className={`${styles.actionBtn} ${styles.editBtn}`}
                             title="Edit Coupon"
@@ -996,6 +1038,75 @@ export default function AdminPanel() {
                   <strong>Created By:</strong> {viewingCoupon.createdBy || 'N/A'}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCouponUsersModal && selectedCouponForUsers && (
+        <div className={styles.modalOverlay} onClick={() => setShowCouponUsersModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Users Who Used Coupon: {selectedCouponForUsers.code}</h2>
+              <button onClick={() => setShowCouponUsersModal(false)} className={styles.closeBtn}>×</button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              {loadingCouponUsers ? (
+                <div className={styles.loading}>
+                  <div className={styles.spinner}></div>
+                  <p>Loading users...</p>
+                </div>
+              ) : couponUsers.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <p>No users have used this coupon yet.</p>
+                </div>
+              ) : (
+                <div className={styles.userDetailsSection}>
+                  <h3>Total Users: {couponUsers.length}</h3>
+                  <div className={styles.couponUsersList}>
+                    {couponUsers.map((user, index) => (
+                      <div key={user.userId} className={styles.couponUserItem}>
+                        <div className={styles.detailRow}>
+                          <strong>User #{index + 1}</strong>
+                        </div>
+                        <div className={styles.detailRow}>
+                          <strong>Name:</strong> {user.name}
+                        </div>
+                        <div className={styles.detailRow}>
+                          <strong>Email:</strong> {user.email}
+                        </div>
+                        <div className={styles.detailRow}>
+                          <strong>Total Usage:</strong> {user.totalUsage} time(s)
+                        </div>
+                        {user.couponTransactions && user.couponTransactions.length > 0 && (
+                          <div className={styles.transactionDetails}>
+                            <strong>Transactions:</strong>
+                            {user.couponTransactions.map((transaction, txIndex) => (
+                              <div key={txIndex} className={styles.transactionItem}>
+                                <div>Amount: {transaction.quantity || transaction.amount || 'N/A'}</div>
+                                <div>Date: {formatDate(transaction.timestamp || transaction.createdAt)}</div>
+                                {transaction.description && <div>Description: {transaction.description}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {user.couponHistory && user.couponHistory.length > 0 && (
+                          <div className={styles.transactionDetails}>
+                            <strong>Coupon History:</strong>
+                            {user.couponHistory.map((couponUse, chIndex) => (
+                              <div key={chIndex} className={styles.transactionItem}>
+                                <div>Used: {formatDate(couponUse.usedAt || couponUse.timestamp)}</div>
+                                {couponUse.discountAmount && <div>Discount: {couponUse.discountAmount}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
