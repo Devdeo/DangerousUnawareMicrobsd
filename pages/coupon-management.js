@@ -280,6 +280,9 @@ export default function CouponManagement() {
             <Link href="/user-management" className={styles.navLink}>
               Users
             </Link>
+            <Link href="/email-management" className={styles.navLink}>
+              Email
+            </Link>
             <span className={styles.welcome}>
               Welcome, {currentUser?.email}
             </span>

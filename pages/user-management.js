@@ -346,6 +346,9 @@ export default function UserManagement() {
             <Link href="/coupon-management" className={styles.navLink}>
               Coupons
             </Link>
+            <Link href="/email-management" className={styles.navLink}>
+              Email
+            </Link>
             <span className={styles.welcome}>
               Welcome, {currentUser?.email}
             </span>

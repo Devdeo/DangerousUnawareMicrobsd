@@ -375,6 +375,182 @@
   background: white;
 }
 
+/* Email Management Styles */
+.emailSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.userSelectionPanel,
+.emailComposerPanel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.selectAllBtn {
+  background: #4299e1;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.selectAllBtn:hover {
+  background: #3182ce;
+}
+
+.userList {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+.userItem {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem;
+}
+
+.userItem:last-child {
+  border-bottom: none;
+}
+
+.userCheckbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.userCheckbox:hover {
+  background: #f7fafc;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.userDate {
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.selectedUsersPreview {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.selectedUsersPreview h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.selectedUsersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selectedUserTag {
+  background: #4299e1;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emailForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.messageTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.helpText {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.25rem;
+}
+
+.sendBtn {
+  background: #48bb78;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.sendBtn:hover:not(:disabled) {
+  background: #38a169;
+}
+
+.sendBtn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .emailSection {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .filterControls {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
 .sortButton {
   padding: 0.5rem 0.75rem;
   background: #4299e1;

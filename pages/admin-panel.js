@@ -131,6 +131,9 @@ export default function AdminPanel() {
             <Link href="/coupon-management" className={styles.navLink}>
               Coupons
             </Link>
+            <Link href="/email-management" className={styles.navLink}>
+              Email
+            </Link>
             <span className={styles.welcome}>
               Welcome, {currentUser?.email}
             </span>
@@ -186,6 +189,12 @@ export default function AdminPanel() {
               <h3>Manage Coupons</h3>
               <p>Create, edit, and track coupon usage</p>
               <div className={styles.statHighlight}>{coupons.length} coupons</div>
+            </Link>
+
+            <Link href="/email-management" className={styles.actionCard}>
+              <h3>Send Emails</h3>
+              <p>Send custom emails to selected users</p>
+              <div className={styles.statHighlight}>{users.length} users</div>
             </Link>
           </div>
         </div>
