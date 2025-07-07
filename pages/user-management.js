@@ -176,11 +176,80 @@ export default function UserManagement() {
       setUsers(users.map(user => 
         user.id === userId ? { ...user, isDisabled: !currentStatus } : user
       ));
+      
+      // Send email notification
+      const user = users.find(u => u.id === userId);
+      if (user?.email) {
+        await sendUserStatusEmail(user, !currentStatus);
+      }
     } catch (error) {
       console.error("Failed to toggle user status:", error);
       alert("Failed to update user status. Please try again.");
     } finally {
       setActionLoading(prev => ({ ...prev, [userId]: null }));
+    }
+  };
+
+  const sendUserStatusEmail = async (user, isDisabled) => {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          to: user.email,
+          templateType: isDisabled ? 'accountDisabled' : 'accountEnabled',
+          templateData: {
+            userName: user.name || 'User',
+            userEmail: user.email
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send status email');
+      }
+    } catch (error) {
+      console.error('Error sending status email:', error);
+    }
+  };
+
+  const handleSendBulkEmail = async () => {
+    if (!confirm('Are you sure you want to send bulk emails to all filtered users?')) {
+      return;
+    }
+
+    setActionLoading(prev => ({ ...prev, 'bulk-email': 'sending' }));
+    
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/send-bulk-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetUsers: filter === 'all' ? 'all' : filter,
+          templateType: 'userRegistration',
+          templateData: {}
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(`Bulk email sent! Successful: ${result.results.successful.length}, Failed: ${result.results.failed.length}`);
+      } else {
+        alert(`Failed to send bulk email: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending bulk email:', error);
+      alert('Failed to send bulk email. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, 'bulk-email': null }));
     }
   };
 
@@ -336,6 +405,14 @@ export default function UserManagement() {
               className={styles.sortButton}
             >
               {sortOrder === "asc" ? "↑" : "↓"}
+            </button>
+            
+            <button 
+              onClick={handleSendBulkEmail}
+              className={`${styles.actionBtn} ${styles.emailBtn}`}
+              disabled={actionLoading['bulk-email'] === 'sending' || filteredUsers.length === 0}
+            >
+              {actionLoading['bulk-email'] === 'sending' ? 'Sending...' : 'Send Bulk Email'}
             </button>
           </div>
         </div>

@@ -478,6 +478,21 @@
   background: #c53030;
 }
 
+.actionBtn.emailBtn {
+  background: #805ad5;
+  color: white;
+  margin-left: 1rem;
+}
+
+.actionBtn.emailBtn:hover {
+  background: #6b46c1;
+}
+
+.actionBtn.emailBtn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
 .actionBtn.enableBtn {
   background: #38a169;
   color: white;
