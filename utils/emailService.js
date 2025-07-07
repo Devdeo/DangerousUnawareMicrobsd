@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 // Create transporter for Zoho Mail
 const createTransporter = () => {
   return nodemailer.createTransporter({
-    host: 'smtp.gmail.com',
+    host: 'smtp.zoho.com',
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
