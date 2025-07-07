@@ -12,6 +12,7 @@ export default function AdminPanel() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -113,8 +114,6 @@ export default function AdminPanel() {
   const totalCreditBalance = users.reduce((sum, user) => sum + (user.creditBalance || 0), 0);
   const activeCoupons = coupons.filter(c => c.isActive).length;
   const totalCouponUsage = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
