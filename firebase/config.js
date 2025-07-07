@@ -12,23 +12,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate config
-if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {
-  console.error('Firebase configuration is missing required fields');
-}
-
-let app;
-let auth;
-let db;
-
-try {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  auth = getAuth(app);
-  db = getFirestore(app);
-} catch (error) {
-  console.error('Error initializing Firebase:', error);
-}
-
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account',
@@ -39,5 +25,4 @@ const signOutUser = () => {
   return signOut(auth);
 };
 
-export { auth, db };
 export default signOutUser;
