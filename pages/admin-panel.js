@@ -12,7 +12,6 @@ export default function AdminPanel() {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -115,10 +114,6 @@ export default function AdminPanel() {
   const activeCoupons = coupons.filter(c => c.isActive).length;
   const totalCouponUsage = coupons.reduce((sum, c) => sum + (c.usedCount || 0), 0);
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
   return (
     <div className={styles.container}>
       <Head>
@@ -126,88 +121,30 @@ export default function AdminPanel() {
         <meta name="description" content="Admin dashboard overview" />
       </Head>
 
-      {/* Mobile Overlay */}
-      <div 
-        className={`${styles.mobileOverlay} ${mobileMenuOpen ? styles.active : ''}`}
-        onClick={toggleMobileMenu}
-      />
-
-      {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${mobileMenuOpen ? styles.mobileOpen : ''}`}>
-        <div className={styles.sidebarHeader}>
-          <h2 className={styles.sidebarTitle}>Admin Panel</h2>
-        </div>
-        
-        <nav className={styles.sidebarNav}>
-          <div className={styles.sidebarSection}>
-            <h3 className={styles.sectionTitle}>Dashboard</h3>
-            <Link href="/admin-panel" className={`${styles.navLink} ${styles.active}`}>
-              <svg className={styles.navIcon} viewBox="0 0 24 24">
-                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
-              </svg>
-              Overview
-            </Link>
-          </div>
-          
-          <div className={styles.sidebarSection}>
-            <h3 className={styles.sectionTitle}>Management</h3>
+      <header className={styles.header}>
+        <div className={styles.headerContent}>
+          <h1 className={styles.title}>Admin Dashboard</h1>
+          <div className={styles.userInfo}>
             <Link href="/user-management" className={styles.navLink}>
-              <svg className={styles.navIcon} viewBox="0 0 24 24">
-                <path d="M16 7c0-2.21-1.79-4-4-4s-4 1.79-4 4 1.79 4 4 4 4-1.79 4-4zm-4 6c-4.42 0-8 1.79-8 4v3h16v-3c0-2.21-3.58-4-8-4z"/>
-              </svg>
               Users
             </Link>
             <Link href="/coupon-management" className={styles.navLink}>
-              <svg className={styles.navIcon} viewBox="0 0 24 24">
-                <path d="M12.79 21L3 11.21v2c0 .45.54.67.85.35l9.79-9.79c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0L1.02 10.73c-.78.78-.78 2.05 0 2.83L10.8 23.34c.39.39 1.02.39 1.41 0l9.79-9.79c.78-.78.78-2.05 0-2.83-.78-.78-2.05-.78-2.83 0L12.79 21z"/>
-              </svg>
               Coupons
             </Link>
             <Link href="/email-management" className={styles.navLink}>
-              <svg className={styles.navIcon} viewBox="0 0 24 24">
-                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-              </svg>
               Email
             </Link>
-          </div>
-        </nav>
-        
-        <div className={styles.sidebarFooter}>
-          <div className={styles.userProfile}>
-            <div className={styles.userAvatar}>
-              {currentUser?.email?.charAt(0).toUpperCase()}
-            </div>
-            <div className={styles.userDetails}>
-              <p className={styles.userName}>Admin</p>
-              <p className={styles.userEmail}>{currentUser?.email}</p>
-            </div>
-          </div>
-          <button onClick={handleLogout} className={styles.logoutBtn}>
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className={styles.mainContent}>
-        <header className={styles.header}>
-          <div className={styles.headerContent}>
-            <button 
-              className={styles.mobileMenuToggle}
-              onClick={toggleMobileMenu}
-            >
-              ☰
+            <span className={styles.welcome}>
+              Welcome, {currentUser?.email}
+            </span>
+            <button onClick={handleLogout} className={styles.logoutBtn}>
+              Sign Out
             </button>
-            <h1 className={styles.title}>Dashboard Overview</h1>
-            <div className={styles.userInfo}>
-              <span className={styles.welcome}>
-                Welcome back!
-              </span>
-            </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main className={styles.main}>
+      <main className={styles.main}>
         <div className={styles.stats}>
           <div className={styles.statCard}>
             <h3>Total Users</h3>
@@ -286,8 +223,7 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
