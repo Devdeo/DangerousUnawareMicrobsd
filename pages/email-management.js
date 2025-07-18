@@ -18,6 +18,7 @@ export default function EmailManagement() {
     message: '',
     htmlMessage: ''
   });
+  const [manualEmails, setManualEmails] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,8 +106,16 @@ export default function EmailManagement() {
   const handleSendEmail = async (e) => {
     e.preventDefault();
     
-    if (selectedUsers.length === 0) {
-      alert('Please select at least one user to send email to.');
+    // Parse manual emails
+    const manualEmailList = manualEmails
+      .split(/[,;\n]/)
+      .map(email => email.trim())
+      .filter(email => email && email.includes('@'));
+
+    const totalRecipients = selectedUsers.length + manualEmailList.length;
+    
+    if (totalRecipients === 0) {
+      alert('Please select at least one user or enter manual email addresses.');
       return;
     }
 
@@ -120,8 +129,8 @@ export default function EmailManagement() {
     try {
       const token = await auth.currentUser.getIdToken();
       
-      // Send individual emails to each selected user
-      const emailPromises = selectedUsers.map(async (userId) => {
+      // Send emails to selected users
+      const userEmailPromises = selectedUsers.map(async (userId) => {
         const user = users.find(u => u.id === userId);
         if (!user || !user.email) return { success: false, userId, error: 'No email found' };
 
@@ -160,7 +169,44 @@ export default function EmailManagement() {
         };
       });
 
-      const results = await Promise.all(emailPromises);
+      // Send emails to manual email addresses
+      const manualEmailPromises = manualEmailList.map(async (email) => {
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">${emailForm.subject}</h2>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              ${emailForm.htmlMessage || emailForm.message.replace(/\n/g, '<br>')}
+            </div>
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            <p style="color: #666; font-size: 12px;">This message was sent from the admin panel.</p>
+          </div>
+        `;
+
+        const response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            to: email,
+            customSubject: emailForm.subject,
+            customHtml: htmlContent,
+            customText: emailForm.message
+          })
+        });
+
+        const result = await response.json();
+        return { 
+          success: response.ok, 
+          email: email, 
+          name: 'Manual Entry',
+          error: response.ok ? null : result.error 
+        };
+      });
+
+      const allPromises = [...userEmailPromises, ...manualEmailPromises];
+      const results = await Promise.all(allPromises);
       const successful = results.filter(r => r.success);
       const failed = results.filter(r => !r.success);
 
@@ -182,6 +228,7 @@ export default function EmailManagement() {
         setEmailForm({ subject: '', message: '', htmlMessage: '' });
         setSelectedUsers([]);
         setSelectAll(false);
+        setManualEmails('');
       }
 
     } catch (error) {
@@ -243,6 +290,8 @@ export default function EmailManagement() {
   const filteredUsers = getFilteredUsers();
   const selectedUserCount = selectedUsers.length;
   const selectedUserDetails = users.filter(user => selectedUsers.includes(user.id));
+  const manualEmailCount = manualEmails.split(/[,;\n]/).map(email => email.trim()).filter(email => email && email.includes('@')).length;
+  const totalRecipientCount = selectedUserCount + manualEmailCount;
 
   return (
     <div className={styles.container}>
@@ -287,6 +336,12 @@ export default function EmailManagement() {
           <div className={styles.statCard}>
             <h3>Selected Users</h3>
             <p className={styles.statNumber}>{selectedUserCount}</p>
+          </div>
+          <div className={styles.statCard}>
+            <h3>Manual Emails</h3>
+            <p className={styles.statNumber}>
+              {manualEmails.split(/[,;\n]/).map(email => email.trim()).filter(email => email && email.includes('@')).length}
+            </p>
           </div>
         </div>
 
@@ -358,25 +413,62 @@ export default function EmailManagement() {
           <div className={styles.emailComposerPanel}>
             <h2 className={styles.sectionTitle}>Compose Email</h2>
             
-            {selectedUserCount > 0 && (
+            {(selectedUserCount > 0 || manualEmailCount > 0) && (
               <div className={styles.selectedUsersPreview}>
-                <h3>Selected Recipients ({selectedUserCount})</h3>
-                <div className={styles.selectedUsersList}>
-                  {selectedUserDetails.slice(0, 5).map(user => (
-                    <div key={user.id} className={styles.selectedUserTag}>
-                      {user.name} ({user.email})
+                <h3>Recipients ({totalRecipientCount} total)</h3>
+                {selectedUserCount > 0 && (
+                  <div>
+                    <h4>Selected Users ({selectedUserCount})</h4>
+                    <div className={styles.selectedUsersList}>
+                      {selectedUserDetails.slice(0, 3).map(user => (
+                        <div key={user.id} className={styles.selectedUserTag}>
+                          {user.name} ({user.email})
+                        </div>
+                      ))}
+                      {selectedUserCount > 3 && (
+                        <div className={styles.selectedUserTag}>
+                          +{selectedUserCount - 3} more users...
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  {selectedUserCount > 5 && (
-                    <div className={styles.selectedUserTag}>
-                      +{selectedUserCount - 5} more...
+                  </div>
+                )}
+                {manualEmailCount > 0 && (
+                  <div>
+                    <h4>Manual Emails ({manualEmailCount})</h4>
+                    <div className={styles.selectedUsersList}>
+                      {manualEmails.split(/[,;\n]/).map(email => email.trim()).filter(email => email && email.includes('@')).slice(0, 3).map((email, index) => (
+                        <div key={index} className={styles.selectedUserTag}>
+                          {email}
+                        </div>
+                      ))}
+                      {manualEmailCount > 3 && (
+                        <div className={styles.selectedUserTag}>
+                          +{manualEmailCount - 3} more emails...
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
             <form onSubmit={handleSendEmail} className={styles.emailForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="manualEmails">Additional Email Addresses</label>
+                <textarea
+                  id="manualEmails"
+                  value={manualEmails}
+                  onChange={(e) => setManualEmails(e.target.value)}
+                  placeholder="Enter additional email addresses separated by commas, semicolons, or new lines&#10;example@email.com, another@email.com&#10;third@email.com"
+                  className={styles.messageTextarea}
+                  rows="3"
+                />
+                <small className={styles.helpText}>
+                  Enter email addresses separated by commas, semicolons, or new lines. These will be added to the selected users above.
+                </small>
+              </div>
+
               <div className={styles.formGroup}>
                 <label htmlFor="emailSubject">Subject *</label>
                 <input
@@ -421,10 +513,10 @@ export default function EmailManagement() {
               <div className={styles.formActions}>
                 <button
                   type="submit"
-                  disabled={emailLoading || selectedUserCount === 0}
+                  disabled={emailLoading || totalRecipientCount === 0}
                   className={`${styles.actionBtn} ${styles.sendBtn}`}
                 >
-                  {emailLoading ? 'Sending...' : `Send Email to ${selectedUserCount} User${selectedUserCount !== 1 ? 's' : ''}`}
+                  {emailLoading ? 'Sending...' : `Send Email to ${totalRecipientCount} Recipient${totalRecipientCount !== 1 ? 's' : ''}`}
                 </button>
               </div>
             </form>
