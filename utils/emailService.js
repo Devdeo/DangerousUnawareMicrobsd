@@ -4,7 +4,7 @@ import nodemailer from 'nodemailer';
 // Create transporter for Gmail
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: 'smtp.zoho.in',
+    host: 'smtp.zeptomail.in',
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
@@ -20,7 +20,7 @@ export const sendEmail = async (to, subject, htmlContent, textContent = '') => {
     const transporter = createTransporter();
     
     const mailOptions = {
-      from: `"${process.env.ZOHO_SENDER_NAME || 'Admin'}" <${process.env.ZOHO_EMAIL}>`,
+      from: `"${process.env.ZOHO_SENDER_NAME || 'Admin'}" <noreply@ytlooplive.com>`,
       to: to,
       subject: subject,
       text: textContent,
